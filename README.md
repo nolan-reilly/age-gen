@@ -1,1 +1,1 @@
-# unc-status-detector
+This project attempts to estimate a person’s age with reasonable accuracy under certain conditions, though it still needs improvement in other areas. It can also classify an individual’s gender fairly reliably. The main feature is a web app that uses these age and gender estimations to categorize a person according to TikTok-inspired labels, like “Unc,” “JIT,” or “OG.” to see how a brain rotted individual would see you... however, due to it's unreliable performance I’ll be putting a pause on this project for now.
