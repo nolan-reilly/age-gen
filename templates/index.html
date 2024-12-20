@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Age Estimation</title>
+  <link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="title-container">
+      <h1>Age Estimation</h1>
+      <p>Allow camera access and click "Capture" to take a picture.</p>
+    </div>
+
+    <div class="video-container">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" style="display: none;"></canvas>
+      <div class="flash" id="flash"></div>
+    </div>
+
+    <button id="actionBtn" class="btn">Capture</button>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    (async () => {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const actionBtn = document.getElementById('actionBtn'); // Unified button for both actions
+      const resultEl = document.getElementById('result');
+      const flash = document.getElementById('flash');
+
+      let isCaptureMode = true; // Tracks whether the button is in "Capture" or "Retake" mode
+
+      try {
+        // Access the camera and stream it to the video element
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+
+        // Wait for the video to load metadata to get its dimensions
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            resolve();
+          };
+        });
+
+        // Set the canvas size to match the video dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      } catch (err) {
+        console.error('Error accessing camera:', err);
+        resultEl.innerText = 'Error accessing camera: ' + err.message;
+      }
+
+      // Handle the button click
+      actionBtn.addEventListener('click', async () => {
+        if (isCaptureMode) {
+          // Capture mode: Take a picture
+          flash.classList.add('active');
+          setTimeout(() => flash.classList.remove('active'), 500);
+
+          // Draw the video frame onto the canvas
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // Hide the video and show the canvas
+          video.style.display = 'none';
+          canvas.style.display = 'block';
+
+          // Change button to "Retake"
+          actionBtn.textContent = 'Retake';
+          isCaptureMode = false;
+
+          // Optionally send the canvas to the server (like before)
+          canvas.toBlob(async (blob) => {
+            if (!blob) {
+              resultEl.innerText = 'Could not capture image.';
+              return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', blob, 'capture.png');
+
+            try {
+              const response = await fetch('http://127.0.0.1:5000/predict', {
+                method: 'POST',
+                body: formData,
+              });
+              const data = await response.json();
+              if (data.predicted_age !== undefined) {
+                resultEl.innerText = `Gender: ${data.predicted_gender}\nPredicted Age: ${data.predicted_age.toFixed(1)}\n${data.message}`;
+              } else {
+                resultEl.innerText = 'Error: ' + (data.error || 'Unknown error');
+              }
+            } catch (err) {
+              console.error('Error sending to server:', err);
+              resultEl.innerText = 'Error sending to server: ' + err.message;
+            }
+          }, 'image/png');
+        } else {
+          // Retake mode: Reset to video mode
+          video.style.display = 'block';
+          canvas.style.display = 'none';
+
+          // Change button back to "Capture"
+          actionBtn.textContent = 'Capture';
+          isCaptureMode = true;
+
+          // Clear any previous result
+          resultEl.textContent = '';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
