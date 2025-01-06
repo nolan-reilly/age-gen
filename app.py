@@ -25,7 +25,7 @@ class AgeEstimationCNN(torch.nn.Module):
         self.bn5 = torch.nn.BatchNorm2d(512)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
-        fc_input_size = 512 * (256 // 32) * (256 // 32)  # 512 * 8 * 8
+        fc_input_size = 512 * (256 // 32) * (256 // 32)
         self.fc1 = torch.nn.Linear(fc_input_size, 1024)
         self.dropout = torch.nn.Dropout(p=0.5)
         self.fc2 = torch.nn.Linear(1024, 1)
@@ -57,7 +57,7 @@ class GenderEstimationCNN(torch.nn.Module):
         self.bn5 = torch.nn.BatchNorm2d(512)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
-        fc_input_size = 512 * (256 // 32) * (256 // 32)  # same calculation
+        fc_input_size = 512 * (256 // 32) * (256 // 32)
         self.fc1 = torch.nn.Linear(fc_input_size, 1024)
         self.dropout = torch.nn.Dropout(p=0.5)
         # Single output for binary classification (0=female, 1=male)
@@ -114,28 +114,6 @@ def crop_to_face(image):
     # If no face is detected, return the original image
     return image
 
-def generate_age_message(age):
-    if 0 <= age <= 2:
-        return "Fresh out the womb"
-    elif 3 <= age <= 12:
-        return "Gremlin"
-    elif 13 <= age <= 17:
-        return "JIT"
-    elif 18 <= age <= 24:
-        return "Youngblood"
-    elif 25 <= age <= 30:
-        return "Developing Unc"
-    elif 31 <= age <= 35:
-        return "Peak Unc"
-    elif 36 <= age <= 50:
-        return "NPC"
-    elif 51 <= age <= 65:
-        return "Old Head"
-    elif age < 65:
-        return "OG"
-    else:
-        return "Invalid age provided."
-
 @app.route('/', methods=['GET'])
 def home():
     return render_template("index.html")
@@ -163,16 +141,13 @@ def predict():
     # Gender prediction
     with torch.no_grad():
         gender_output = gender_model(input_tensor)
-    # Convert logits to probability
+
     gender_prob = torch.sigmoid(gender_output).item()
     predicted_gender = "Female" if gender_prob > 0.5 else "Male"
 
-    # Generate a message based on the predicted age
-    message = generate_age_message(predicted_age)
 
     return jsonify({
         "predicted_age": predicted_age,
-        "message": message,
         "predicted_gender": predicted_gender
     })
 

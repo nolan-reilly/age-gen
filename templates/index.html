@@ -25,25 +25,22 @@
     (async () => {
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
-      const actionBtn = document.getElementById('actionBtn'); // Unified button for both actions
+      const actionBtn = document.getElementById('actionBtn');
       const resultEl = document.getElementById('result');
       const flash = document.getElementById('flash');
 
-      let isCaptureMode = true; // Tracks whether the button is in "Capture" or "Retake" mode
+      let isCaptureMode = true;
 
       try {
-        // Access the camera and stream it to the video element
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
 
-        // Wait for the video to load metadata to get its dimensions
         await new Promise((resolve) => {
           video.onloadedmetadata = () => {
             resolve();
           };
         });
 
-        // Set the canvas size to match the video dimensions
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
       } catch (err) {
@@ -51,26 +48,20 @@
         resultEl.innerText = 'Error accessing camera: ' + err.message;
       }
 
-      // Handle the button click
       actionBtn.addEventListener('click', async () => {
         if (isCaptureMode) {
-          // Capture mode: Take a picture
           flash.classList.add('active');
           setTimeout(() => flash.classList.remove('active'), 500);
 
-          // Draw the video frame onto the canvas
           const ctx = canvas.getContext('2d');
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          // Hide the video and show the canvas
           video.style.display = 'none';
           canvas.style.display = 'block';
 
-          // Change button to "Retake"
           actionBtn.textContent = 'Retake';
           isCaptureMode = false;
 
-          // Optionally send the canvas to the server (like before)
           canvas.toBlob(async (blob) => {
             if (!blob) {
               resultEl.innerText = 'Could not capture image.';
@@ -97,15 +88,11 @@
             }
           }, 'image/png');
         } else {
-          // Retake mode: Reset to video mode
           video.style.display = 'block';
           canvas.style.display = 'none';
-
-          // Change button back to "Capture"
           actionBtn.textContent = 'Capture';
           isCaptureMode = true;
 
-          // Clear any previous result
           resultEl.textContent = '';
         }
       });
